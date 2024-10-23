@@ -1,0 +1,71 @@
+path: ./
+train: ./train/images
+val: ./val/images
+
+nc: 64
+names:
+  0: Aerosol
+  1: Aluminium foil
+  2: Battery
+  3: Aluminium blister pack
+  4: Carded blister pack
+  5: Clear plastic bottle
+  6: Glass bottle
+  7: Other plastic bottle
+  8: Plastic bottle cap
+  9: Metal bottle cap
+  10: Broken glass
+  11: Drink can
+  12: Food Can
+  13: Corrugated carton
+  14: Drink carton
+  15: Egg carton
+  16: Meal carton
+  17: Other carton
+  18: Paper cup
+  19: Disposable plastic cup
+  20: Foam cup
+  21: Glass cup
+  22: Other plastic cup
+  23: Food waste
+  24: Plastic lid
+  25: Metal lid
+  26: Magazine paper
+  27: Tissues
+  28: Wrapping paper
+  29: Normal paper
+  30: Paper bag
+  31: Plastified paper bag
+  32: Pizza box
+  33: Garbage bag
+  34: Single-use carrier bag
+  35: Polypropylene bag
+  36: Produce bag
+  37: Cereal bag
+  38: Bread bag
+  39: Plastic film
+  40: Crisp packet
+  41: Other plastic wrapper
+  42: Retort pouch
+  43: Spread tub
+  44: Tupperware
+  45: Disposable food container
+  46: Foam food container
+  47: Other plastic container
+  48: Plastic gloves
+  49: Plastic utensils
+  50: Pop tab
+  51: Rope & strings
+  52: Scrap metal
+  53: Shoe
+  54: Six pack rings
+  55: Squeezable tube
+  56: Plastic straw
+  57: Paper straw
+  58: Styrofoam piece
+  59: Toilet tube
+  60: Unlabeled litter
+  61: Glass jar
+  62: Other plastic
+  63: Cigarette
+
