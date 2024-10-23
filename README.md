@@ -1,5 +1,5 @@
 # trash_detector
-
+TEST
 
 ## Datasets
 - Wastenet
