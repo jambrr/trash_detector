@@ -19,8 +19,7 @@ def convert_2_yolo(json_file, output_dir="./datasets/TACO/"):
         image_info = data['images'][image_id]
         file_name = str.lower(image_info['file_name'])
         #formatted_filename = re.search(r"(\d+)\.jpg", file_name).group(1)
-        #formatted_filename = os.path.splitext(filename_formatting(file_name))[0] + '.txt'
-        formatted_filename = os.path.splitext(file_name)[0] + '.txt'
+        formatted_filename = os.path.splitext(filename_formatting(file_name))[0] + '.txt'
         img_width = image_info['width']
         img_height = image_info['height']
         yolo_annotations = []
@@ -150,25 +149,13 @@ if __name__== "__main__":
     batch_annotations = "./datasets/TACO/batch_1/annotations.json"
     all_annotations = "./datasets/TACO/annotations.json"
     output_dir = "./datasets/TACO/all_labels"
-    
-    #trashnet - training
-    trashnet_img_output = "./datasets/trashnet/train/labels"
-    trashnet_annotations = "./datasets/trashnet/train/_annotations.coco.json"
 
-    #trashnet - validation
-    trashnet_val_output = "./datasets/trashnet/valid/labels"
-    trashnet_val_annotations = "./datasets/trashnet/valid/_annotations.coco.json"
+    empty_directory("./datasets/TACO/val/images")
+    empty_directory("./datasets/TACO/val/labels")
+    empty_directory("./datasets/TACO/train/images")
+    empty_directory("./datasets/TACO/train/labels")
 
-    #empty_directory("./datasets/TACO/val/images")
-    #empty_directory("./datasets/TACO/val/labels")
-    #empty_directory("./datasets/TACO/train/images")
-    #empty_directory("./datasets/TACO/train/labels")
-
-    #convert_2_yolo(trashnet_val_annotations, trashnet_val_output)
+    #convert_2_yolo(all_annotations, output_dir)
+    #move_and_rename(all_annotations)
     #move_and_rename(all_annotations)
     #data_splitting()
-
-    from pycocotools.coco import COCO
-    data_source = COCO(annotation_file='./datasets/trashnet/train/_annotations.coco.json')
-    print(repr(data_source))
-

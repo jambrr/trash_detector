@@ -1,0 +1,13 @@
+path: ./trashnet
+train: ./train/images
+val: ./valid/images
+
+nc: 6
+
+names:
+    0: trash
+    1: metal
+    2: paper
+    3: paper container
+    4: plastic
+    5: plastic PET
