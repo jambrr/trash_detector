@@ -3,7 +3,7 @@ train: ./train/images
 val: ./val/images
 
 nc: 60
-names:
+names: 
     0: Aluminium foil
     1: Battery
     2: Aluminium blister pack
@@ -64,5 +64,3 @@ names:
     57: Styrofoam piece
     58: Unlabeled litter
     59: Cigarette
-
-

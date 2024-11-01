@@ -1,3 +1,25 @@
+# Ignore all files by default
+*
+
+# Allow specific file types
+!*.py
+!*.ipynb
+!*.yaml
+
+# Ignore log files
+*.log
+
+# Ignore large model files
+*.pt
+
+# Ignore common directory names
 datasets/
 runs/
+test_data/
 
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
