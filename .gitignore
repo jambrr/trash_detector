@@ -5,6 +5,7 @@
 !*.py
 !*.ipynb
 !*.yaml
+!frontend/
 
 # Ignore log files
 *.log
