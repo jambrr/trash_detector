@@ -1,12 +1,15 @@
-path: ./AquaTrash
+path: ./taco2
 train: ./train/images
 val: ./val/images
 
-nc: 4
-
-names:
-    0: glass,
-    1: paper,
-    2: metal,
-    3: plastic
-
+nc: 9
+names: 
+    0: battery
+    1: metal
+    2: paper
+    3: textile
+    4: plastic
+    5: cigarette
+    6: glass
+    7: food_waste
+    8: litter
