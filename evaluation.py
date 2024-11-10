@@ -1,102 +1,152 @@
-import json
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage.draw import polygon
+import torch
+from torchvision.ops import box_iou
+from ultralytics import YOLO
 
-def test_class_performance(model, dataset_json_path, images_folder, class_id, iou_threshold=0.5):
+def evaluate_yolo(model, dataloader, iou_threshold=0.5, conf_threshold=0.5):
     """
-    Tests the model performance on a specific class using segmentation masks, visualizing images where the model fails.
-    
+    Evaluate YOLO model on test data.
+
     Parameters:
-    - model: The segmentation model to test.
-    - dataset_json_path (str): Path to the COCO-style JSON file with annotations.
-    - images_folder (str): Folder containing the images referenced in the JSON file.
-    - class_id (int): The class ID to test and visualize.
-    - iou_threshold (float): The IoU threshold to consider a detection as correct.
-    """
-    # Load annotations
-    with open(dataset_json_path, 'r') as f:
-        data = json.load(f)
-    
-    # Filter out images and annotations for the specific class
-    class_annotations = [ann for ann in data['annotations'] if ann['category_id'] == class_id]
-    image_ids_with_class = {ann['image_id'] for ann in class_annotations}
-    images_with_class = [img for img in data['images'] if img['id'] in image_ids_with_class]
+    - model: YOLO model (PyTorch format, either YOLOv5, YOLOv7, or similar)
+    - dataloader: DataLoader with test data
+    - iou_threshold: IoU threshold to determine true positives
+    - conf_threshold: Confidence threshold for detections
 
-    # Loop through each image with the target class
-    for image_info in images_with_class:
-        image_path = f"{images_folder}/{image_info['file_name']}"
-        image = cv2.imread(image_path)
-        if image is None:
-            continue
-
-        # Run the model on the image (assuming model outputs a segmentation mask for the class)
-        predicted_mask = model.predict_segmentation(image, class_id)  # Adjust this to your model’s method
-
-        # Get ground truth masks for the specified class
-        gt_masks = [
-            segmentation_to_mask(ann['segmentation'], image.shape[:2])
-            for ann in class_annotations if ann['image_id'] == image_info['id']
-        ]
-        
-        # Calculate IoU between the predicted mask and each ground truth mask
-        max_iou = max(calculate_mask_iou(predicted_mask, gt_mask) for gt_mask in gt_masks)
-        
-        # Visualization for poor detections
-        if max_iou < iou_threshold:
-            plot_segmentation(image, gt_masks, predicted_mask, max_iou)
-
-def segmentation_to_mask(segmentation, image_shape):
-    """
-    Converts COCO-style polygon segmentation to a binary mask.
-    
-    Parameters:
-    - segmentation (list): A list of lists containing polygon coordinates.
-    - image_shape (tuple): Shape of the image (height, width).
-    
     Returns:
-    - np.array: Binary mask of the segmentation.
+    - mAP, precision, recall: Evaluation metrics
     """
-    mask = np.zeros(image_shape, dtype=np.uint8)
-    for poly in segmentation:
-        poly = np.array(poly).reshape(-1, 2)
-        rr, cc = polygon(poly[:, 1], poly[:, 0], image_shape)
-        mask[rr, cc] = 1
-    return mask
 
-def calculate_mask_iou(mask1, mask2):
-    """
-    Calculates the IoU between two binary masks.
+    model.eval()  # Set model to evaluation mode
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
     
+    # Initialize counters for true positives, false positives, and false negatives
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+    total_ious = []
+    
+    # Loop through test images
+    for images, targets in dataloader:
+        images = images.to(device)
+        targets = [t.to(device) for t in targets]
+        
+        # Perform inference
+        with torch.no_grad():
+            predictions = model(images)
+        
+        for i, pred in enumerate(predictions):
+            # Filter predictions based on confidence threshold
+            pred = pred[pred[:, 4] > conf_threshold]
+            pred_boxes = pred[:, :4]  # Extract predicted bounding boxes
+            pred_scores = pred[:, 4]  # Extract confidence scores
+            pred_labels = pred[:, 5]  # Extract predicted labels
+            
+            # Get true boxes and labels for current image
+            true_boxes = targets[i][:, :4]
+            true_labels = targets[i][:, 4]
+            
+            # Calculate IoUs
+            ious = box_iou(pred_boxes, true_boxes)
+            max_iou, max_iou_idx = ious.max(dim=1)
+            
+            # Determine true positives and false positives
+            for j, iou in enumerate(max_iou):
+                if iou > iou_threshold and pred_labels[j] == true_labels[max_iou_idx[j]]:
+                    true_positives += 1
+                else:
+                    false_positives += 1
+            
+            # Count false negatives
+            false_negatives += len(true_boxes) - true_positives
+
+    # Calculate precision, recall, and mAP
+    precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
+    recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+    mAP = true_positives / len(dataloader.dataset)  # Simplified mAP approximation
+
+    return mAP, precision, recall
+
+def evaluate_yolo_without_dataloader(model, images, annotations, iou_threshold=0.5, conf_threshold=0.5):
+    """
+    Evaluate YOLO model on test data without a DataLoader.
+
     Parameters:
-    - mask1, mask2 (np.array): Binary masks to compare.
-    
-    Returns:
-    - float: IoU between the two masks.
-    """
-    intersection = np.logical_and(mask1, mask2).sum()
-    union = np.logical_or(mask1, mask2).sum()
-    return intersection / union if union != 0 else 0
+    - model: YOLO model (in PyTorch format)
+    - images: List of images (each image is a torch.Tensor)
+    - annotations: List of ground truth annotations for each image
+                   (each annotation is a torch.Tensor containing bounding boxes and labels)
+    - iou_threshold: IoU threshold to determine true positives
+    - conf_threshold: Confidence threshold for detections
 
-def plot_segmentation(image, gt_masks, predicted_mask, iou):
+    Returns:
+    - mAP, precision, recall: Evaluation metrics
     """
-    Visualizes the image with ground truth and predicted segmentation masks for analysis.
-    """
-    plt.figure(figsize=(10, 10))
-    plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    model.eval()  # Set model to evaluation mode
+
+    # Initialize counters for true positives, false positives, and false negatives
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+
+    # Loop through test images
+    for img, target in zip(images, annotations):
+        img = img.to(device).unsqueeze(0)  # Add batch dimension
+        target = target.to(device)
+
+        # Perform inference
+        with torch.no_grad():
+            pred = model(img)[0]  # Assume model output is a single batch of predictions
+
+        # Filter predictions based on confidence threshold
+        pred = pred[pred[:, 4] > conf_threshold]
+        pred_boxes = pred[:, :4]  # Extract predicted bounding boxes
+        pred_scores = pred[:, 4]  # Extract confidence scores
+        pred_labels = pred[:, 5]  # Extract predicted labels
+
+        # Get true boxes and labels for current image
+        true_boxes = target[:, :4]
+        true_labels = target[:, 4]
+
+        # Calculate IoUs
+        ious = box_iou(pred_boxes, true_boxes)
+        max_iou, max_iou_idx = ious.max(dim=1)
+
+        # Determine true positives and false positives
+        for j, iou in enumerate(max_iou):
+            if iou > iou_threshold and pred_labels[j] == true_labels[max_iou_idx[j]]:
+                true_positives += 1
+            else:
+                false_positives += 1
+
+        # Count false negatives
+        false_negatives += len(true_boxes) - true_positives
+
+    # Calculate precision, recall, and mAP
+    precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
+    recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+    mAP = true_positives / len(images)  # Simplified mAP approximation
+
+    return mAP, precision, recall
+
+def test_image(model, image_path):
+    model = YOLO(model)
     
-    # Plot ground truth masks
-    gt_overlay = image.copy()
-    for gt_mask in gt_masks:
-        gt_overlay[gt_mask > 0] = [0, 255, 0]  # Green overlay for GT
-    plt.imshow(cv2.addWeighted(image, 0.5, gt_overlay, 0.5, 0))
+    results = model.predict(image_path)
     
-    # Plot predicted mask
-    pred_overlay = image.copy()
-    pred_overlay[predicted_mask > 0] = [255, 0, 0]  # Red overlay for prediction
-    plt.imshow(cv2.addWeighted(image, 0.5, pred_overlay, 0.5, 0))
+    from PIL import Image
+    for i, r in enumerate(results):
+        # Plot results image
+        im_bgr = r.plot()  # BGR-order numpy array
+        im_rgb = Image.fromarray(im_bgr[..., ::-1])  # RGB-order PIL image
     
-    plt.title(f"IoU: {iou:.2f} (green=GT, red=Prediction)")
-    plt.show()
+        # Show results to screen (in supported environments)
+        r.show()
+    
+        # Save results to disk
+        r.save(filename=f"results{i}.jpg")
+
 

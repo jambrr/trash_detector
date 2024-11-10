@@ -1,6 +1,6 @@
-path: ./trashnet
+path: ./taco2
 train: ./train/images
-val: ./valid/images
+val: ./val/images
 
 nc: 6
 
