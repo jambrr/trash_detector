@@ -6,7 +6,7 @@
 !*.ipynb
 !*.yaml
 !frontend/
-!best_model
+!best_model/
 
 # Ignore log files
 *.log
