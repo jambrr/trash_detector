@@ -2,7 +2,7 @@ path: ./taconet
 train: ./train/images
 val: ./val/images
 
-nc: 9
+nc: 7
 names: 
     0: battery
     1: metal
@@ -11,5 +11,5 @@ names:
     4: plastic
     5: cigarette
     6: glass
-    7: food_waste
-    8: litter
+    # 7: food_waste
+    # 8: litter

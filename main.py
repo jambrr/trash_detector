@@ -4,7 +4,6 @@ import json
 import os
 import re
 from pycocotools.coco import COCO
-from .evaluation import test_image
 
 def get_classes():
     data_source = COCO(annotation_file='./datasets/TACO/annotations.json')
@@ -31,9 +30,10 @@ if __name__ == "__main__":
         data="./new_data.yaml",
         epochs=100,
         patience=10,
+        imgsz=416,
         batch=-1,
-        imgsz=640,
+        optimizer="SGD",
         lr0=0.001,
-        optimizer='SGD',
         cos_lr=True,
+        auto_augment=None
     )
