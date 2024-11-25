@@ -1,8 +1,0 @@
-path: ./glassbottles
-train: ./train/images
-val: ./valid/images
-
-nc: 2
-names: 
-    0: glass
-    1: glass
