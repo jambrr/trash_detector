@@ -8,6 +8,4 @@ preprocessor = TrashnetPreprocessor("trashnet", "datasets/trashnet", "datasets/t
 
 preprocessor.preprocess(preprocessor.train_df)
 
-print(preprocessor.augmented_df.head())
-
-print(len(preprocessor.train_df))
+print(len(preprocessor.augmented_df))
